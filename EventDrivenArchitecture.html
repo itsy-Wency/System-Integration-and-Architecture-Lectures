@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Interactive EDA Story Lab — ITD108L</title>
+<style>
+:root{
+ --bg:#070b16;--panel:#11182a;--panel2:#18233b;--line:#2e3a59;
+ --text:#f4f7ff;--muted:#aeb9d3;--cyan:#32d7ff;--violet:#b86cff;
+ --green:#5be39a;--orange:#ffb65c;--red:#ff687d;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(circle at 80% 0,#241044 0,transparent 35%),radial-gradient(circle at 0 80%,#062d3a 0,transparent 28%),var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+button{font:inherit}
+.app{display:grid;grid-template-columns:275px 1fr;min-height:100vh}
+aside{position:sticky;top:0;height:100vh;background:rgba(5,8,17,.93);border-right:1px solid var(--line);padding:22px 15px;overflow:auto;z-index:20}
+.brand{font-weight:900;font-size:18px}.brand small{display:block;color:var(--muted);font-weight:500;margin-top:6px;line-height:1.4}
+.progress{height:7px;background:#202b45;border-radius:99px;margin:17px 0}.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--violet),var(--cyan));border-radius:99px;transition:.3s}
+.nav button{width:100%;display:block;text-align:left;background:none;border:0;color:var(--muted);padding:9px 11px;border-radius:9px;cursor:pointer;margin:2px 0}
+.nav button:hover,.nav button.active{background:#1b2742;color:white}
+main{max-width:1250px;width:100%;margin:auto;padding:30px}
+.hero,.card,.scene{background:rgba(17,24,42,.9);border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
+.hero{padding:42px;position:relative;overflow:hidden;margin-bottom:18px}
+.hero:before{content:"";position:absolute;width:380px;height:380px;border-radius:50%;right:-130px;top:-190px;background:rgba(184,108,255,.18);filter:blur(10px)}
+h1{font-size:clamp(36px,6vw,68px);line-height:.98;margin:8px 0 16px;position:relative}
+h2{font-size:31px;margin:0 0 15px}h3{margin-top:0}
+p,li{line-height:1.65}.muted{color:var(--muted)}
+.badge{display:inline-block;padding:6px 10px;border-radius:99px;background:#252044;color:#d8c2ff;font-size:11px;font-weight:800;margin-right:5px}
+.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-top:18px}
+.primary,.secondary{border-radius:10px;padding:11px 16px;cursor:pointer;font-weight:800}
+.primary{border:0;color:white;background:linear-gradient(90deg,var(--violet),#6e75ff)}
+.secondary{border:1px solid #3a496b;background:#1a2540;color:white}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:13px}
+.card{padding:23px;margin:16px 0}
+.choice{padding:17px;border:1px solid var(--line);border-radius:14px;background:#0e1629;cursor:pointer;transition:.25s}
+.choice:hover{transform:translateY(-3px);border-color:var(--cyan);box-shadow:0 10px 30px rgba(50,215,255,.08)}
+.story{position:relative;min-height:205px;overflow:hidden;margin:18px 0;padding:20px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,#10192e,#090e1c)}
+.characters{display:flex;align-items:flex-end;gap:16px;position:relative;z-index:3}
+.char{width:110px;text-align:center;flex:0 0 auto}.avatar{width:75px;height:75px;border-radius:50%;margin:auto;display:grid;place-items:center;font-size:36px;background:#202c49;border:2px solid #536382;box-shadow:0 8px 25px #0006;animation:float 3s ease-in-out infinite}
+.char:nth-child(3) .avatar{animation-delay:.6s}.char:nth-child(4) .avatar{animation-delay:1.2s}
+.char .name{font-weight:900;font-size:13px;margin-top:5px}.char .role{font-size:11px;color:var(--muted)}
+.bubble{flex:1;padding:15px 17px;background:#1a2742;border:1px solid #425173;border-radius:16px;position:relative;animation:slide .45s ease both}
+.bubble:before{content:"";position:absolute;left:-10px;bottom:22px;border-width:7px 10px 7px 0;border-style:solid;border-color:transparent #425173 transparent transparent}
+@keyframes float{50%{transform:translateY(-8px)}}@keyframes slide{from{opacity:0;transform:translateX(-15px)}to{opacity:1;transform:none}}
+.pipeline{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin:25px 0}
+.node{min-width:125px;padding:14px 12px;text-align:center;border:1px solid #536281;background:#202c49;border-radius:12px;font-weight:800;position:relative}
+.arrow{color:var(--cyan);font-size:23px;font-weight:900}
+.node.active{animation:glow .9s ease;box-shadow:0 0 35px rgba(50,215,255,.35);border-color:var(--cyan)}
+@keyframes glow{0%{transform:scale(1)}45%{transform:scale(1.08)}100%{transform:scale(1)}}
+.particle{position:absolute;width:14px;height:14px;border-radius:50%;background:var(--cyan);box-shadow:0 0 20px var(--cyan);left:8%;top:55%;opacity:0;z-index:2}
+.particle.go{animation:travel 2.2s linear forwards}
+@keyframes travel{0%{left:10%;opacity:0}10%{opacity:1}50%{left:50%;opacity:1}90%{left:88%;opacity:1}100%{left:94%;opacity:0}}
+.timeline{display:grid;grid-template-columns:repeat(10,1fr);gap:5px;margin:20px 0}
+.step{height:9px;border-radius:99px;background:#26334f;cursor:pointer}.step.done{background:linear-gradient(90deg,var(--violet),var(--cyan))}
+.pattern-view{min-height:300px;padding:22px;border-radius:17px;background:#0b1222;border:1px solid var(--line);position:relative;overflow:hidden}
+.scene-title{font-size:25px;font-weight:900}.pattern-number{font-size:12px;color:var(--cyan);font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+.diagram{display:flex;align-items:center;justify-content:center;gap:9px;flex-wrap:wrap;margin:25px 0}
+.diagram .node{min-width:105px}
+.callout{padding:13px 15px;border-left:4px solid var(--orange);background:rgba(255,182,92,.07);border-radius:9px;margin-top:14px}
+.quiz-option{width:100%;text-align:left;padding:13px;margin:7px 0;border:1px solid var(--line);border-radius:10px;background:#111a2e;color:white;cursor:pointer}
+.quiz-option.correct{border-color:var(--green);background:rgba(91,227,154,.1)}.quiz-option.wrong{border-color:var(--red);background:rgba(255,104,125,.1)}
+.feedback{font-weight:800;margin-top:9px}
+#radar{height:210px;display:flex;align-items:end;gap:7px;padding:15px;border:1px solid var(--line);border-radius:15px;background:#0b1220}
+.bar{flex:1;background:linear-gradient(180deg,var(--cyan),var(--violet));border-radius:5px 5px 0 0;min-width:15px;position:relative;animation:rise .7s ease both}
+.bar span{position:absolute;bottom:-22px;left:50%;transform:translateX(-50%);font-size:10px;color:var(--muted)}
+@keyframes rise{from{height:0!important}}
+.kpi{padding:15px;border-radius:13px;background:#0d1527;border:1px solid var(--line)}.kpi b{font-size:26px;display:block}
+footer{color:var(--muted);font-size:12px;padding:30px 0}
+@media(max-width:850px){.app{grid-template-columns:1fr}aside{height:auto;position:relative}.nav{display:grid;grid-template-columns:1fr 1fr}.characters{align-items:center}.char{width:75px}.avatar{width:58px;height:58px;font-size:27px}.timeline{display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside>
+  <div class="brand">EDA STORY LAB<small>System Integration & Architecture 1 · ITD108L</small></div>
+  <div class="progress"><i id="progress"></i></div>
+  <div class="nav" id="nav"></div>
+</aside>
+
+<main>
+<section class="hero" id="top">
+  <span class="badge">INTERACTIVE LECTURE</span><span class="badge">STORY MODE</span><span class="badge">10 PATTERNS</span>
+  <h1>When Systems<br>Start Talking</h1>
+  <p class="muted">A visual, animated journey through Event-Driven Architecture, from the integration problem to the ten integration patterns.</p>
+  <div class="toolbar">
+    <button class="primary" onclick="scrollToId('s1')">▶ Start the Story</button>
+    <button class="secondary" onclick="runFullDemo()">⚡ Run EDA Demo</button>
+  </div>
+</section>
+
+<div class="story">
+  <div class="particle" id="heroParticle"></div>
+  <div class="characters">
+    <div class="char"><div class="avatar">🧑‍💻</div><div class="name">Alex</div><div class="role">Student</div></div>
+    <div class="bubble" id="heroBubble"><b>Alex:</b> “Our application has payment, inventory, shipping, SMS, and analytics. How can all of these systems coordinate without becoming tangled?”<br><br><span class="muted">Click Start the Story to investigate.</span></div>
+    <div class="char"><div class="avatar">🤖</div><div class="name">Byte</div><div class="role">EDA Guide</div></div>
+    <div class="char"><div class="avatar">🧑‍🏫</div><div class="name">Mia</div><div class="role">Architect</div></div>
+  </div>
+</div>
+
+<section class="card" id="s1">
+<h2>1. The Integration Problem</h2>
+<p>Modern applications rarely operate as one isolated program. They combine clients, APIs, microservices, databases, cloud services, legacy systems, and third-party providers.</p>
+<div class="pipeline">
+<div class="node">Web / Mobile</div><div class="arrow">↔</div><div class="node">API</div><div class="arrow">↔</div><div class="node">Services</div><div class="arrow">↔</div><div class="node">External Systems</div>
+</div>
+<div class="story">
+<div class="characters"><div class="char"><div class="avatar">🧑‍💻</div><div class="name">Alex</div><div class="role">Student</div></div>
+<div class="bubble"><b>Alex:</b> “The problem isn't just making systems work. It's making them work <i>reliably at scale</i> without excessive coupling.”</div></div>
+</div>
+<p><b>System integration</b> connects independent applications, services, databases, and external systems so they can exchange data and coordinate operations.</p>
+</section>
+
+<section class="card" id="s2">
+<h2>2. Choose How Systems Communicate</h2>
+<div class="grid">
+<div class="choice" onclick="showComm('rr')"><h3>Request-Response</h3><p>Synchronous — the caller waits.</p></div>
+<div class="choice" onclick="showComm('mq')"><h3>Message Queue</h3><p>Asynchronous — work is buffered.</p></div>
+<div class="choice" onclick="showComm('ps')"><h3>Publish-Subscribe</h3><p>Asynchronous — multiple subscribers can react.</p></div>
+</div>
+<div class="story" id="commStory"><div class="characters"><div class="char"><div class="avatar">🤖</div><div class="name">Byte</div><div class="role">Guide</div></div><div class="bubble"><b>Byte:</b> “Choose a communication style above. I’ll animate what actually happens.”</div></div></div>
+</section>
+
+<section class="card" id="s3">
+<h2>3. Watch the Synchronous Problem</h2>
+<p>In request-response, the client sends a request and generally waits for the response before continuing.</p>
+<div class="pipeline" id="rrPipeline"><div class="node">Client</div><div class="arrow">→</div><div class="node">Order Service</div><div class="arrow">→</div><div class="node">Payment</div><div class="arrow">→</div><div class="node">Response</div></div>
+<div class="toolbar"><button class="primary" onclick="animatePipeline('rrPipeline')">▶ Send Request</button></div>
+<div class="callout"><b>When to use:</b> when the caller genuinely needs an immediate answer, such as retrieving product data or validating credentials.</div>
+</section>
+
+<section class="card" id="s4">
+<h2>4. Command vs. Event</h2>
+<div class="compare grid">
+<div class="choice"><h3>Command</h3><p>Instruction / request. Usually imperative.</p><div class="node">ReserveInventory</div><div class="node" style="margin-top:8px">ProcessPayment</div></div>
+<div class="choice"><h3>Event</h3><p>Fact that already happened. Usually past tense.</p><div class="node">InventoryReserved</div><div class="node" style="margin-top:8px">PaymentCompleted</div></div>
+</div>
+<div class="story"><div class="characters"><div class="char"><div class="avatar">🧑‍🏫</div><div class="name">Mia</div><div class="role">Architect</div></div><div class="bubble"><b>Mia:</b> “Commands say <i>do this</i>. Events say <i>this happened</i>.”<div class="callout">Examples: OrderCreated · PaymentCompleted · InventoryReserved · OrderShipped · UserRegistered</div></div></div></div>
+</section>
+
+<section class="card" id="s5">
+<h2>5. Build an Event-Driven Architecture</h2>
+<p>Instead of directly calling every service and waiting, a producer publishes an event. Interested systems independently react.</p>
+<div class="pipeline" id="edaPipeline"><div class="node">Producer</div><div class="arrow">→</div><div class="node">Broker</div><div class="arrow">→</div><div class="node">Consumers</div></div>
+<div class="toolbar"><button class="primary" onclick="animateEDA()">▶ Publish OrderCreated</button><button class="secondary" onclick="resetEDA()">Reset</button></div>
+<div class="story"><div class="characters"><div class="char"><div class="avatar">🤖</div><div class="name">Byte</div><div class="role">EDA Guide</div></div><div class="bubble" id="edaBubble"><b>Byte:</b> “Something happened. Any interested service can react to it.”</div></div></div>
+</section>
+
+<section class="card" id="s6">
+<h2>6. EDA Components — Explore the Machine</h2>
+<div class="grid">
+<div class="choice" onclick="component('Producer')"><h3>🟣 Producer</h3><p>Creates or publishes an event.</p></div>
+<div class="choice" onclick="component('Payload')"><h3>📦 Event Payload</h3><p>Data and metadata required for processing.</p></div>
+<div class="choice" onclick="component('Broker')"><h3>🚦 Broker</h3><p>Transports, routes, buffers, and/or persists messages.</p></div>
+<div class="choice" onclick="component('Topic')"><h3>📡 Topic</h3><p>Logical stream/channel for subscribers.</p></div>
+<div class="choice" onclick="component('Queue')"><h3>📥 Queue</h3><p>Holds work until a consumer processes it.</p></div>
+<div class="choice" onclick="component('Consumer')"><h3>🟢 Consumer</h3><p>Subscribes to and processes events.</p></div>
+</div>
+<div class="story"><div class="characters"><div class="char"><div class="avatar">🧑‍🏫</div><div class="name">Mia</div><div class="role">Architect</div></div><div class="bubble" id="componentBubble"><b>Mia:</b> “Click a component. We’ll inspect its job in the architecture.”</div></div></div>
+</section>
+
+<section class="card" id="s7">
+<h2>7. Publish-Subscribe: One Event, Many Reactions</h2>
+<div class="pipeline"><div class="node">Order Service</div><div class="arrow">→</div><div class="node">order-events<br><small>Topic</small></div><div class="arrow">→</div><div class="node">Payment</div><div class="arrow">+</div><div class="node">Inventory</div><div class="arrow">+</div><div class="node">Notification</div><div class="arrow">+</div><div class="node">Analytics</div></div>
+<div class="toolbar"><button class="primary" onclick="fanOut()">▶ Fan Out OrderCreated</button></div>
+<div class="story"><div class="characters"><div class="char"><div class="avatar">🤖</div><div class="name">Byte</div><div class="role">Guide</div></div><div class="bubble" id="fanBubble"><b>Byte:</b> “One event can trigger independent reactions. The producer does not need to know every consumer.”</div></div></div>
+</section>
+
+<section class="card" id="s8">
+<h2>8. Message Queue: Work Distribution</h2>
+<div class="pipeline"><div class="node">Producer</div><div class="arrow">→</div><div class="node">Queue</div><div class="arrow">→</div><div class="node">Worker 1</div><div class="arrow">or</div><div class="node">Worker 2</div><div class="arrow">or</div><div class="node">Worker 3</div></div>
+<div class="toolbar"><button class="primary" onclick="queueRace()">▶ Process 6 Jobs</button></div>
+<div id="queueJobs" class="grid"></div>
+<p class="muted">The queue acts as a buffer so producer and consumer can operate independently. A message is normally handled by one worker.</p>
+</section>
+
+<section class="card" id="s9">
+<h2>9. Message Queue vs. Publish-Subscribe</h2>
+<div class="grid">
+<div class="kpi"><b>Queue</b><span class="muted">Work distribution · one worker normally handles a message · background jobs · image processing</span></div>
+<div class="kpi"><b>Pub-Sub</b><span class="muted">Event distribution · multiple subscribers · notifications · downstream workflows</span></div>
+</div>
+<div class="callout"><b>Think:</b> Queue = “Who should process this work?” &nbsp; Pub-Sub = “Who is interested in this event?”</div>
+</section>
+
+<section class="card" id="s10">
+<h2>10. The Ten Integration Patterns — Story Mode</h2>
+<p>Use the timeline below. Each stop is a mini-scene with an animated diagram and a practical scenario.</p>
+<div class="timeline" id="timeline"></div>
+<div class="pattern-view" id="patternView"></div>
+<div class="toolbar"><button class="secondary" onclick="prevPattern()">← Previous</button><button class="primary" onclick="nextPattern()">Next Pattern →</button></div>
+</section>
+
+<section class="card" id="s11">
+<h2>11. Pattern Challenge: Design the System</h2>
+<p>Alex is designing an online store. Choose the pattern that best fits each situation.</p>
+<div id="scenarioQuiz"></div>
+</section>
+
+<section class="card" id="s12">
+<h2>12. Knowledge Check</h2>
+<div id="quiz"></div>
+<h3 id="score">Score: 0 / 8</h3>
+</section>
+
+<section class="card" id="s13">
+<h2>13. Architecture Decision Dashboard</h2>
+<div class="grid">
+<div class="kpi"><b id="k1">Synchronous</b><span>Request-Response</span></div>
+<div class="kpi"><b id="k2">Asynchronous</b><span>Message Queue / Pub-Sub</span></div>
+<div class="kpi"><b id="k3">10</b><span>Integration patterns</span></div>
+<div class="kpi"><b id="k4">EDA</b><span>Loose coupling mindset</span></div>
+</div>
+<div id="radar"></div>
+<p class="muted">Visual recap: the lecture emphasizes communication behavior, decoupling, routing, translation, and aggregation as recurring architectural concerns.</p>
+</section>
+
+<section class="card" id="s14">
+<h2>14. Exit Ticket</h2>
+<div class="story"><div class="characters"><div class="char"><div class="avatar">🧑‍💻</div><div class="name">Alex</div><div class="role">Student</div></div><div class="bubble"><b>Alex:</b> “I think I finally get it. But can I explain it without memorizing the slides?”</div></div></div>
+<div class="grid">
+<div class="choice"><h3>Explain</h3><p>Explain EDA using producer, event, broker, topic/queue, and consumer.</p></div>
+<div class="choice"><h3>Design</h3><p>Design an event-driven workflow and select an integration pattern.</p></div>
+<div class="choice"><h3>Compare</h3><p>Compare request-response with event-driven communication and explain trade-offs.</p></div>
+</div>
+<div class="callout"><b>One-sentence challenge:</b> When would you prefer an event over a direct request?</div>
+</section>
+
+<footer>
+Interactive adaptation based on the uploaded <b>Event-Driven Architecture</b> lecture for ITD108L. The source covers system integration, three communication approaches, EDA components, message brokers, publish-subscribe, message queues, and ten integration patterns.
+</footer>
+</main>
+</div>
+
+<script>
+const sections=[...document.querySelectorAll('main > section')];
+const nav=document.getElementById('nav');
+sections.forEach((s,i)=>{
+ const b=document.createElement('button');
+ b.textContent=s.querySelector('h2')?.textContent||'Section';
+ b.onclick=()=>s.scrollIntoView({behavior:'smooth'});
+ nav.appendChild(b);
+});
+window.addEventListener('scroll',()=>{
+ let y=scrollY+180, idx=0;
+ sections.forEach((s,i)=>{if(s.offsetTop<=y)idx=i});
+ document.getElementById('progress').style.width=(idx/(sections.length-1)*100)+'%';
+ [...nav.children].forEach((b,i)=>b.classList.toggle('active',i===idx));
+});
+function scrollToId(id){document.getElementById(id).scrollIntoView({behavior:'smooth'})}
+
+function showComm(type){
+ const box=document.getElementById('commStory');
+ const data={
+ rr:['🧑‍💻','Alex','Request-Response','“I ask the service a question, then I wait for the answer.”','Synchronous — the caller waits for the response.'],
+ mq:['🤖','Byte','Message Queue','“Put the work in the queue. A worker can process it later.”','Asynchronous — useful for background processing and work distribution.'],
+ ps:['🧑‍🏫','Mia','Publish-Subscribe','“Announce the event once. Multiple interested services can react.”','Asynchronous — useful for notifications, analytics, auditing, and downstream workflows.']
+ }[type];
+ box.innerHTML='<div class="characters"><div class="char"><div class="avatar">'+data[0]+'</div><div class="name">'+data[1]+'</div><div class="role">'+data[2]+'</div></div><div class="bubble"><b>'+data[1]+':</b> '+data[3]+'<div class="callout">'+data[4]+'</div></div></div>';
+}
+function animatePipeline(id){
+ const nodes=[...document.querySelectorAll('#'+id+' .node')];
+ nodes.forEach(n=>n.classList.remove('active'));
+ nodes.forEach((n,i)=>setTimeout(()=>n.classList.add('active'),i*400));
+}
+function animateEDA(){
+ const nodes=[...document.querySelectorAll('#edaPipeline .node')];
+ nodes.forEach(n=>n.classList.remove('active'));
+ nodes.forEach((n,i)=>setTimeout(()=>n.classList.add('active'),i*550));
+ const b=document.getElementById('edaBubble');
+ b.innerHTML='<b>Byte:</b> “OrderCreated is published. The broker transports it. Interested consumers react independently.”';
+ const p=document.getElementById('heroParticle');p.classList.remove('go');void p.offsetWidth;p.classList.add('go');
+}
+function resetEDA(){
+ document.querySelectorAll('#edaPipeline .node').forEach(n=>n.classList.remove('active'));
+ document.getElementById('edaBubble').innerHTML='<b>Byte:</b> “Something happened. Any interested service can react to it.”';
+}
+function component(name){
+ const lines={
+ Producer:'“I create or publish the event.”',
+ Payload:'“I carry the data and metadata required for processing.”',
+ Broker:'“I decouple producers from consumers and manage delivery.”',
+ Topic:'“I am a logical stream/channel to which consumers can subscribe.”',
+ Queue:'“I hold work until a consumer processes it.”',
+ Consumer:'“I subscribe to and process an event.”'
+ };
+ document.getElementById('componentBubble').innerHTML='<b>Mia:</b> '+lines[name];
+}
+function fanOut(){
+ const nodes=[...document.querySelectorAll('#s7 .node')];
+ nodes.forEach(n=>n.classList.remove('active'));
+ nodes.forEach((n,i)=>setTimeout(()=>n.classList.add('active'),i*220));
+ document.getElementById('fanBubble').innerHTML='<b>Byte:</b> “Four reactions are now running independently: payment, inventory, notification, and analytics.”';
+}
+function queueRace(){
+ const box=document.getElementById('queueJobs');box.innerHTML='';
+ const jobs=['Image A','Image B','Image C','Image D','Image E','Image F'];
+ jobs.forEach((j,i)=>{
+  const d=document.createElement('div');d.className='choice';d.innerHTML='<b>'+j+'</b><div class="muted" id="job'+i+'">Queued…</div>';box.appendChild(d);
+  setTimeout(()=>document.getElementById('job'+i).textContent='Processed by Worker '+((i%3)+1),450+i*420);
+ });
+}
+const patterns=[
+ ['Request-Response','Client needs an immediate answer.','Client','Service','Response','Think: “Ask and wait.”'],
+ ['Publish-Subscribe','One event should trigger multiple independent reactions.','Publisher','Topic','Many Subscribers','Think: “Who is interested?”'],
+ ['Message Queue','Background work should be buffered and distributed to workers.','Producer','Queue','Worker','Think: “Who should process this work?”'],
+ ['Event Notification','Tell other systems that something happened with minimal event data.','Service','Event + ID','Interested System','Think: “Here is a signal; fetch details if needed.”'],
+ ['Event-Carried State Transfer','Include enough state in the event so consumers need fewer calls to the producer.','Producer','Stateful Event','Consumer','Think: “The event carries the data.”'],
+ ['Point-to-Point','One sender needs one specific receiver through a dedicated channel or queue.','Sender','Dedicated Channel','Receiver','Think: “One-to-one.”'],
+ ['API Gateway','Clients need a single entry point to backend services.','Client','API Gateway','Backend Services','Think: “One front door.”'],
+ ['Message Router','A message must be sent to a destination based on content or routing rules.','Message','Router','Destination','Think: “Read it, then choose the road.”'],
+ ['Message Translator','Two systems use incompatible formats or data models.','System A','Translator','System B','Think: “Same meaning, different language.”'],
+ ['Aggregator','Several related messages/results must become one logical result.','Results A/B/C','Aggregator','Combined Result','Think: “Collect, then decide.”']
+];
+let patternIndex=0;
+function renderPattern(){
+ const p=patterns[patternIndex],view=document.getElementById('patternView');
+ view.innerHTML='<div class="pattern-number">Pattern '+(patternIndex+1)+' of 10</div><div class="scene-title">'+p[0]+'</div><p>'+p[1]+'</p><div class="diagram"><div class="node active">'+p[2]+'</div><div class="arrow">→</div><div class="node">'+p[3]+'</div><div class="arrow">→</div><div class="node">'+p[4]+'</div></div><div class="callout"><b>Story cue:</b> '+p[5]+'</div><div class="story"><div class="characters"><div class="char"><div class="avatar">'+(patternIndex%2?'🤖':'🧑‍🏫')+'</div><div class="name">'+(patternIndex%2?'Byte':'Mia')+'</div><div class="role">Narrator</div></div><div class="bubble"><b>Scenario:</b> “Imagine an online store. This pattern solves one specific communication problem in the system.”</div></div></div>';
+ [...document.querySelectorAll('.step')].forEach((s,i)=>s.classList.toggle('done',i<=patternIndex));
+}
+patterns.forEach((_,i)=>{const s=document.createElement('div');s.className='step';s.onclick=()=>{patternIndex=i;renderPattern()};document.getElementById('timeline').appendChild(s)});
+function nextPattern(){patternIndex=(patternIndex+1)%10;renderPattern()}
+function prevPattern(){patternIndex=(patternIndex+9)%10;renderPattern()}
+renderPattern();
+
+const scenarios=[
+ ['The product page must immediately return product information.','Request-Response'],
+ ['OrderCreated should trigger payment, inventory, notifications, and analytics.','Publish-Subscribe'],
+ ['Six image-processing jobs should be distributed among workers.','Message Queue'],
+ ['A tiny event tells another system that an order changed; it can retrieve details using the ID.','Event Notification'],
+ ['Consumers should receive the complete customer state in the event.','Event-Carried State Transfer'],
+ ['A message should go to one dedicated receiving system.','Point-to-Point'],
+ ['Mobile and web clients need one entry point for several backend services.','API Gateway'],
+ ['Orders should be routed to different services based on message content.','Message Router'],
+ ['A modern JSON service must communicate with a legacy XML system.','Message Translator'],
+ ['An order should be confirmed only after several service results are collected.','Aggregator']
+];
+const sq=document.getElementById('scenarioQuiz');
+scenarios.forEach((s,i)=>{
+ const div=document.createElement('div');div.className='card';
+ div.innerHTML='<h3>Scenario '+(i+1)+'</h3><p>'+s[0]+'</p><div class="grid">'+patterns.map(p=>'<button class="quiz-option" onclick="scenarioAnswer(this,\''+s[1]+'\')">'+p[0]+'</button>').join('')+'</div><div class="feedback"></div>';
+ sq.appendChild(div);
+});
+function scenarioAnswer(btn,correct){
+ const box=btn.closest('.card');if(box.dataset.done)return;box.dataset.done=1;
+ box.querySelectorAll('button').forEach(b=>b.disabled=true);
+ const f=box.querySelector('.feedback');
+ if(btn.textContent===correct){btn.classList.add('correct');f.textContent='Correct — '+correct+'.';f.style.color='var(--green)'}
+ else{btn.classList.add('wrong');f.textContent='Not quite. Best fit: '+correct+'.';f.style.color='var(--red)'}
+}
+const questions=[
+ ['What is an event?',['An instruction','A record that something has already happened','A database table','A response code'],'A record that something has already happened'],
+ ['Which approach is synchronous?',['Request-Response','Message Queue','Publish-Subscribe','Event Notification'],'Request-Response'],
+ ['What is the main role of a broker?',['Create UI screens','Transport, route, buffer and/or persist messages','Replace consumers','Write source code'],'Transport, route, buffer and/or persist messages'],
+ ['In Pub-Sub, how many subscribers may react to one event?',['Only one','Multiple independent subscribers','Exactly two','None'],'Multiple independent subscribers'],
+ ['A queue primarily supports…',['Work distribution','Event broadcasting to every subscriber','API authentication','Data translation'],'Work distribution'],
+ ['Which pattern converts one message format/data model into another?',['Aggregator','Message Translator','API Gateway','Point-to-Point'],'Message Translator'],
+ ['Which pattern provides one entry point for clients?',['API Gateway','Message Router','Event Notification','Message Queue'],'API Gateway'],
+ ['Which pattern combines several related results into one logical result?',['Aggregator','Pub-Sub','Request-Response','Translator'],'Aggregator']
+];
+let score=0;
+questions.forEach((q,qi)=>{
+ const d=document.createElement('div');d.className='card';
+ d.innerHTML='<h3>'+(qi+1)+'. '+q[0]+'</h3>'+q[1].map(o=>'<button class="quiz-option" onclick="quizAnswer(this,\''+q[2]+'\')">'+o+'</button>').join('')+'<div class="feedback"></div>';
+ document.getElementById('quiz').appendChild(d);
+});
+function quizAnswer(btn,correct){
+ const box=btn.closest('.card');if(box.dataset.done)return;box.dataset.done=1;
+ box.querySelectorAll('button').forEach(b=>b.disabled=true);
+ const f=box.querySelector('.feedback');
+ if(btn.textContent===correct){btn.classList.add('correct');score++;f.textContent='Correct.';f.style.color='var(--green)'}
+ else{btn.classList.add('wrong');f.textContent='Correct answer: '+correct;f.style.color='var(--red)'}
+ document.getElementById('score').textContent='Score: '+score+' / 8';
+}
+function runFullDemo(){
+ scrollToId('s5');setTimeout(animateEDA,500);setTimeout(()=>scrollToId('s7'),2600);setTimeout(fanOut,3100);setTimeout(()=>scrollToId('s8'),4700);setTimeout(queueRace,5200);
+}
+const radar=document.getElementById('radar');
+[85,60,75,50,90,65,70,80,55,78].forEach((h,i)=>{const d=document.createElement('div');d.className='bar';d.style.height=h+'%';d.innerHTML='<span>'+(i+1)+'</span>';radar.appendChild(d)});
+</script>
+</body>
+</html>
